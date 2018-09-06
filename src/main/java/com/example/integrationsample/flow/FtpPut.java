@@ -34,8 +34,8 @@ public class FtpPut {
     @Autowired
     private SessionFactory<FTPFile> ftpSessionFactory;
 
-    @Bean
-    @ServiceActivator(inputChannel = "toFtpChannel")
+//    @Bean
+//    @ServiceActivator(inputChannel = "toFtpChannel")
     public MessageHandler ftpOutboundHandler() {
         FtpMessageHandler handler = new FtpMessageHandler(ftpSessionFactory);
         handler.setCharset(StandardCharsets.UTF_8.name());
@@ -44,11 +44,9 @@ public class FtpPut {
             @Override
             public String generateFileName(Message<?> message) {
 
-                System.err.println(message);
-
+                // create file name using current timestamp
                 Instant instant = Instant.now();
                 long timeStampMillis = instant.toEpochMilli();
-
                 return timeStampMillis + ".txt";
             }
         });
@@ -57,16 +55,18 @@ public class FtpPut {
         return handler;
     }
 
-    @MessagingGateway
+//    @MessagingGateway
     public interface MyGateway {
 
-         @Gateway(requestChannel = "toFtpChannel")
-         void sendToFtp(String fileName);
+        @Gateway(requestChannel = "toFtpChannel")
+        void sendToFtp(String fileName);
     }
 
-    @Scheduled(fixedDelay=5000)
+//    @Scheduled(fixedDelay = 5000)
     public void putToFtp() {
         MyGateway gateway = context.getBean(MyGateway.class);
+        
+        // upload file. accept 1) java.io.File; 2) byte[]; and 3) java.lang.String.
         gateway.sendToFtp("test123");
     }
 
