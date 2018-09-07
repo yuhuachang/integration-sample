@@ -23,9 +23,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 /**
  * Integration flow that put files to FTP triggered by scheduler.
  */
-@Configuration
-@EnableAsync
-@EnableScheduling
+//@Configuration
+//@EnableAsync
+//@EnableScheduling
 public class FtpPut {
 
     @Autowired

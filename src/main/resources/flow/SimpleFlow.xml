@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/integration
+        http://www.springframework.org/schema/integration/spring-integration.xsd
+        http://www.springframework.org/schema/task
+        http://www.springframework.org/schema/task/spring-task.xsd
+        http://www.springframework.org/schema/integration/ftp
+        http://www.springframework.org/schema/integration/ftp/spring-integration-ftp.xsd"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:int="http://www.springframework.org/schema/integration"
+    xmlns:int-ftp="http://www.springframework.org/schema/integration/ftp"
+    xmlns:task="http://www.springframework.org/schema/task">
+
+    <!-- param file -->
+    <context:property-placeholder location="classpath:application.yml"/>
+
+    <!-- ftp client -->
+    <bean id="ftpClientFactory" class="org.springframework.integration.ftp.session.DefaultFtpSessionFactory">
+        <property name="host" value="${ftp-host}"/>
+        <property name="port" value="${ftp-port}"/>
+        <property name="username" value="${ftp-username}"/>
+        <property name="password" value="${ftp-password}"/>
+    </bean>
+
+    <!-- INPUT - generic input, need to send message in manually -->
+    <int:channel id="inputChannel" />
+
+    <!-- INPUT - ftp inbound -->
+    <int-ftp:inbound-streaming-channel-adapter
+                id="inboundFtpChannel"
+                channel="inboundFtpChannel"
+                session-factory="ftpClientFactory"
+                remote-directory="/input"
+                filename-pattern="*.txt"
+                >
+        <int:poller fixed-rate="5000" />
+    </int-ftp:inbound-streaming-channel-adapter>
+    
+    <!--
+    <int-ftp:inbound-channel-adapter id="ftpInbound"
+                channel="ftpChannel"
+                session-factory="ftpClientFactory"
+                filename-pattern="*.txt"
+                auto-create-local-directory="true"
+                delete-remote-files="false"
+                remote-directory="/"
+                local-directory="#{ T(org.springframework.integration.samples.ftp.TestSuite).LOCAL_FTP_TEMP_DIR}/ftpInbound"
+                >
+            <int:poller  fixed-rate="1000" />
+    </int-ftp:inbound-channel-adapter>
+    -->
+
+    <!-- OUTPUT -->
+    <int:channel id="outputChannel">
+        <int:queue capacity="10" />
+    </int:channel>
+
+    <!-- my integration service -->
+    <int:service-activator
+        input-channel="inputChannel"
+        output-channel="outputChannel"
+        ref="helloService"
+        method="sayHello" />
+
+    <!-- my handler to process message -->
+    <bean id="helloService" class="com.example.integrationsample.simple.HelloService" />
+
+    <!-- scheduler -->
+    <task:executor id="executor" queue-capacity="20" pool-size="5-20" />
+
+</beans>
